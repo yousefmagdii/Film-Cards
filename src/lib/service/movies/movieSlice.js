@@ -2,10 +2,9 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_KEY = '2058f3b8';
-const BASE_URL = 'http://www.omdbapi.com/';
+const BASE_URL = 'https://www.omdbapi.com/';
 const controller = new AbortController();
 
-// Function to fetch detailed information for a specific movie by imdbID
 const fetchMovieDetails = async (imdbID) => {
   const response = await axios.get(`${BASE_URL}?apikey=${API_KEY}&i=${imdbID}`);
   return response.data;
@@ -14,14 +13,12 @@ const fetchMovieDetails = async (imdbID) => {
 export const fetchPopularMovies = createAsyncThunk(
   'movies/fetchPopularMovies',
   async () => {
-    // Fetch the list of popular movies (basic information)
     const response = await axios.get(`${BASE_URL}?apikey=${API_KEY}&s=movie`, {
       signal: controller.signal,
     });
 
-    const movies = response.data.Search; // List of movies from the first request
+    const movies = response.data.Search;
 
-    // Fetch detailed information for each movie using imdbID
     const detailedMovies = await Promise.all(
       movies.map(async (movie) => {
         const movieDetails = await fetchMovieDetails(movie.imdbID);
@@ -29,14 +26,14 @@ export const fetchPopularMovies = createAsyncThunk(
       }),
     );
 
-    return detailedMovies; // Return the detailed movie information
+    return detailedMovies;
   },
 );
 
 const movieSlice = createSlice({
   name: 'movies',
   initialState: {
-    popularMovies: [], // Holds detailed movie information
+    popularMovies: [],
     status: 'idle',
     error: null,
   },
@@ -48,11 +45,12 @@ const movieSlice = createSlice({
       })
       .addCase(fetchPopularMovies.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.popularMovies = action.payload; // Store detailed movie info
+        state.popularMovies = action.payload;
       })
       .addCase(fetchPopularMovies.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message;
+        console.error('Error fetching popular movies:', action.error);
       });
   },
 });
